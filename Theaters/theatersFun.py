@@ -6,41 +6,39 @@ def insert_theatre(collections,theaterId, location):
 
 
 def top_cities_with_maximum_theatres(collections):
-    dic={}
-    for i in collections.find():
-        city =  i['location']['address']['city']
-        if dic.get(city):
-            dic[city] +=1
-        else:
-            dic[city]=1
-    a = sorted(dic.items(), key=lambda x: x[1], reverse=True)
-    return a[0:10]
+    res = collections.aggregate([
+        {"$project": {"city": "$location.address.city", "theater": "$theaterId"}},
+        {"$group": {"_id": {"city": "$city", "theater": "$theater"}, "num": {"$sum": 1}}},
+        {"$group": {"_id": "$_id.city", "theaterCount": {"$push": {"theaterName": "$_id.theater", "count": "$num"}}}},
+        {"$project": {"_id": 1, "totalTheatersAtCity": {"$sum": "$theaterCount.count"}}},
+        {"$sort": {"totalTheatersAtCity": -1}},
+        {"$limit": 10}
+    ])
+    for i in res:
+        print(i)
 
 
-def theatres_nearby_given_coordinates(collections,coord):
-    dic={}
-    for i in collections.find():
-        cord_data = i['location']['geo']['coordinates']
-        x = float(coord[0]) - float(cord_data[0])
-        y = float(coord[1]) - float(cord_data[1])
-        x = round(x*x + y*y,5)
-        if dic.get(x):
-            dic[x].append(i['theaterId'])
-        else:
-            dic[x]=[]
-            dic[x].append(i['theaterId'])
-    a = dict(sorted(dic.items()))
-    ans = []
-    for k,v in a.items():
-        ans += v
-        if len(ans)+len(v)>10:
-            x=10-len(ans)
-            ans += v[0:x]
-        else:
-            ans += v
-        if len(ans)>=10:
-            break
-    return ans
+def theatres_nearby_given_coordinates(collections):
+    res = collections.aggregate(
+        [
+            {
+                "$geoNear": {
+                    "near": {"type": "Point", "coordinates":[-84.526169, 37.986019]},
+                    "maxDistance": 10 * 10000000000000,
+                    "distanceField": "dist.calculated",
+                    "includeLocs": "dist.location",
+                    "distanceMultiplier": 1 / 1000,
+                    "spherical": "true"
+                }
+            },
+            {"$project": {"city": "$location.address.city", "distance": "$dist.calculated"}},
+            {"$group": {"_id": {"distance": "$distance", "city": "$city"}}},
+            {"$sort": {"_id.distance": 1}},
+            {"$limit": 10}
+        ]);
+    for i in res:
+        print(i)
+
 
 
 
@@ -49,16 +47,17 @@ def Theaters(db):
     # theatersData(db)
     collections = db['theaters']
 
+
+
     #insert new theatre
     # insert_theatre(collections,'1999',{'address': {'street1': '11301 W Pico Blvd', 'city': 'Los Angeles', 'state': 'CA', 'zipcode': '90064'}, 'geo': {'type': 'Point', 'coordinates': ['-118.4389', '34.035656']}})
 
     #top 10 cities with maximum theatre
-    top_cities =  top_cities_with_maximum_theatres(collections)
     print("Top 10 cities with maximum theatres")
-    print(top_cities)
+    top_cities_with_maximum_theatres(collections)
+
 
     # top 10 theatres nearby given coordinates
-    nearby_theatre = theatres_nearby_given_coordinates(collections,['-93.24565', '44.85466'])
-    print("Top 10 theatres nearby given coordinates eg: ['-93.24565', '44.85466']")
-    print(nearby_theatre)
+    print("Top 10 theatres nearby given coordinates eg: [-84.526169, 37.986019]")
+    theatres_nearby_given_coordinates(collections)
 

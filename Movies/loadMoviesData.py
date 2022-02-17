@@ -1,6 +1,6 @@
 import json
 from bson import ObjectId
-
+from datetime import datetime
 
 def moviesData(db):
     # read users.json file and convert into list
@@ -8,52 +8,66 @@ def moviesData(db):
     data = []
     Lines = file1.readlines()
     for line in Lines:
-        #changing string to json
-        final_dictionary = json.loads(line)
-        if(final_dictionary.get('_id')):
-            final_dictionary['_id'] = ObjectId(final_dictionary['_id']['$oid'])
-            if(final_dictionary.get('year')):
-                x=final_dictionary['year']
-                if type(x)!=str:
-                    final_dictionary['year'] = final_dictionary['year']['$numberInt']
-
-            if(final_dictionary.get('runtime')):
-                 final_dictionary['runtime'] = final_dictionary['runtime']['$numberInt']
-
-            if(final_dictionary.get('released')):
-                final_dictionary['released'] = final_dictionary['released']['$date']['$numberLong']
-
-            x = final_dictionary['imdb']['rating']
-            if type(x)!=str and final_dictionary['imdb']['rating'].get('$numberDouble'):
-                final_dictionary['imdb']['rating'] = final_dictionary['imdb']['rating']['$numberDouble']
-            elif type(x)!=str:
-                final_dictionary['imdb']['rating'] = final_dictionary['imdb']['rating']['$numberInt']
-
-            if(final_dictionary['imdb'].get('votes')):
-                 final_dictionary['imdb']['votes'] = final_dictionary['imdb']['votes']['$numberInt']
-            final_dictionary['imdb']['id'] = final_dictionary['imdb']['id']['$numberInt']
-
-            if final_dictionary.get('tomatoes'):
-                if(final_dictionary['tomatoes'].get('viewer')):
-                    if(final_dictionary['tomatoes']['viewer'].get('rating')):
-                        if final_dictionary['tomatoes']['viewer']['rating'].get('$numberInt'):
-                            final_dictionary['tomatoes']['viewer']['rating'] = final_dictionary['tomatoes']['viewer']['rating']['$numberInt']
-                        else :
-                            final_dictionary['tomatoes']['viewer']['rating'] = final_dictionary['tomatoes']['viewer']['rating']['$numberDouble']
-
-                    final_dictionary['tomatoes']['viewer']['numReviews'] = final_dictionary['tomatoes']['viewer']['numReviews']['$numberInt']
-                final_dictionary['tomatoes']['lastUpdated']=final_dictionary['tomatoes']['lastUpdated']['$date']['$numberLong']
-
-            if final_dictionary.get('num_mflix_comments'):
-                final_dictionary['num_mflix_comments'] = final_dictionary['num_mflix_comments']['$numberInt']
-        # print(final_dictionary)
-        data.append(final_dictionary)
-        # break;
+        line = json.loads(line.strip())
+        if '_id' in line:
+            line['_id'] = ObjectId(line['_id']['$oid'])
+        if 'runtime' in line:
+            if '$numberInt' in line['runtime']:
+                line['runtime'] = int(line['runtime']['$numberInt'])
+        if 'num_mflix_comments' in line:
+            if '$numberInt' in line['num_mflix_comments']:
+                line['num_mflix_comments'] = int(line['num_mflix_comments']['$numberInt'])
+        if 'released' in line:
+            if '$date' in line['released']:
+                x = line['released']['$date']['$numberLong']
+                datetime_obj =datetime.fromtimestamp(int(x) / 1e3)
+                line['released'] = datetime_obj
+        if 'awards' in line:
+            if 'wins' in line['awards']:
+                if '$numberInt' in line['awards']['wins']:
+                    line['awards']['wins'] = int(line['awards']['wins']['$numberInt'])
+            if 'nominations' in line['awards']:
+                if '$numberInt' in line['awards']['nominations']:
+                    line['awards']['nominations'] = int(line['awards']['nominations']['$numberInt'])
+        if 'lastupdated' in line:
+            line['lastupdated'] = line['lastupdated']
+        if 'year' in line:
+            if '$numberInt' in line['year']:
+                line['year'] = int(line['year']['$numberInt'])
+        if 'imdb' in line:
+            if 'rating' in line['imdb']:
+                if '$numberDouble' in line['imdb']['rating']:
+                    line['imdb']['rating'] = float(line['imdb']['rating']['$numberDouble'])
+            if 'votes' in line['imdb']:
+                if '$numberInt' in line['imdb']['votes']:
+                    line['imdb']['votes'] = int(line['imdb']['votes']['$numberInt'])
+            if 'id' in line['imdb']:
+                if '$numberInt' in line['imdb']['id']:
+                    line['imdb']['id'] = int(line['imdb']['id']['$numberInt'])
+        if 'tomatoes' in line:
+            if 'viewer' in line['tomatoes']:
+                if 'rating' in line['tomatoes']['viewer']:
+                    if '$numberInt' in line['tomatoes']['viewer']['rating']:
+                        line['tomatoes']['viewer']['rating'] = int(line['tomatoes']['viewer']['rating']['$numberInt'])
+                if 'numReviews' in line['tomatoes']['viewer']:
+                    if '$numberInt' in line['tomatoes']['viewer']['numReviews']:
+                        line['tomatoes']['viewer']['numReviews'] = int(
+                            line['tomatoes']['viewer']['numReviews']['$numberInt'])
+                if 'meter' in line['tomatoes']['viewer']:
+                    if '$numberInt' in line['tomatoes']['viewer']['meter']:
+                        line['tomatoes']['viewer']['meter'] = int(line['tomatoes']['viewer']['meter']['$numberInt'])
+            if 'lastUpdated' in line['tomatoes']:
+                if '$date' in line['tomatoes']['lastUpdated']:
+                    x = int(line['tomatoes']['lastUpdated']['$date']['$numberLong'])
+                    datetime_obj = datetime.fromtimestamp(int(x) / 1e3)
+                    line['tomatoes']['lastUpdated'] = datetime_obj
+        data.append(line)
     # print(data)
 
     # Created or Switched to collection
     # names: movies
     Collection = db["movies"]
+    # Collection.drop()
     if isinstance(data, list):
         Collection.insert_many(data)
     else:

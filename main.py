@@ -10,18 +10,16 @@ if __name__ == "__main__":
     #creating database
     db = client["mflix"]
 
-    print(" ******    Comments  **************")
-    Comments(db)
-    print()
-    print(" ******    Movies  **************")
-    Movies(db)
-    print()
+    # print(" ******    Comments  **************")
+    # Comments(db)
+    # print()
+    # print(" ******    Movies  **************")
+    # Movies(db)
+    # print()
     print(" ******    Theatres  **************")
     Theaters(db)
 
     # Users(db)
-
-    collections = db['comments']
 
 
 
