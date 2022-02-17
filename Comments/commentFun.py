@@ -42,7 +42,7 @@ def total_number_of_comment_in_year(collections,given_year):
 def Comments(db):
 
     # for loading data into comments collection
-    # commentsData(db)
+    commentsData(db)
     collections = db['comments']
 
 

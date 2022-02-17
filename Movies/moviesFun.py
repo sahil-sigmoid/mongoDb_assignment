@@ -124,7 +124,7 @@ def moviesWithEachGenreWithHighestImdbRating(collections):
 
 def Movies(db):
     #loading data into movies collection
-    # moviesData(db)
+    moviesData(db)
 
     collections = db['movies']
     for i in collections.find():

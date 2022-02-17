@@ -44,7 +44,7 @@ def theatres_nearby_given_coordinates(collections):
 
 def Theaters(db):
     # for loading data into comments collection
-    # theatersData(db)
+    theatersData(db)
     collections = db['theaters']
 
 
